@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>InboxBox</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -10,29 +10,16 @@
 <body>
   <header>
     <p class="kicker">InboxBox</p>
-    <h1>Shelf</h1>
-    <p class="lede">Forward to the bot. Files stay in Telegram. We keep file_id only.</p>
+    <h1>Your shelf</h1>
   </header>
-  <main>
-    <section>
-      <h2>Boxes</h2>
-      <div class="grid">
-        <button data-cmd="box:Work">Work</button>
-        <button data-cmd="box:Ideas">Ideas</button>
-        <button data-cmd="box:Links">Links</button>
-        <button data-cmd="box:Later">Later</button>
-      </div>
-    </section>
-    <section>
-      <h2>Actions</h2>
-      <div class="row">
-        <button data-cmd="list">Open</button>
-        <button data-cmd="move">Move</button>
-        <button data-cmd="delete">Delete</button>
-      </div>
-    </section>
-    <p class="note">Use the bot chat for save and Open. VIP is 149 Stars, once.</p>
-  </main>
+  <div class="search-wrap">
+    <input id="q" type="search" placeholder="Search" autocomplete="off">
+  </div>
+  <section id="home">
+    <p class="section-label">Boxes</p>
+    <div id="rows" class="list"></div>
+    <p class="empty">Forward to the bot</p>
+  </section>
   <script src="app.js"></script>
 </body>
 </html>
