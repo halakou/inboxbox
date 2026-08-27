@@ -5,6 +5,10 @@ if (tg) {
   try { tg.setHeaderColor("secondary_bg_color"); } catch (e) {}
   if (tg.MainButton) tg.MainButton.hide();
   if (tg.BackButton) tg.BackButton.hide();
+  if (tg.SettingsButton) {
+    tg.SettingsButton.show();
+    tg.SettingsButton.onClick(() => show("settings"));
+  }
 }
 
 (function theme() {
@@ -17,6 +21,15 @@ if (tg) {
     document.documentElement.setAttribute("data-low", "1");
   }
 })();
+
+function haptic(kind) {
+  try {
+    if (tg && tg.HapticFeedback) {
+      if (kind === "ok") tg.HapticFeedback.notificationOccurred("success");
+      else if (kind === "sel") tg.HapticFeedback.selectionChanged();
+    }
+  } catch (e) {}
+}
 
 function qs() { return new URLSearchParams(location.search); }
 function decodeParts(raw, n) {
@@ -35,12 +48,14 @@ const BOXES = decodeParts(params.get("boxes"), 3).map((b) => ({
   name: decodeURIComponent(b[1] || "Box"),
   count: Number(b[2] || 0),
 }));
-const ITEMS = decodeParts(params.get("items"), 5).map((it) => ({
+const ITEMS = decodeParts(params.get("items"), 7).map((it) => ({
   id: it[0],
   box: it[1],
   kind: it[2],
   bytes: Number(it[3] || 0),
   label: decodeURIComponent(it[4] || it[2] || "file"),
+  pin: it[5] === "1",
+  opened: it[6] === "1",
 }));
 const SOURCES = decodeParts(params.get("sources"), 3).map((s) => ({
   id: s[0],
@@ -93,25 +108,45 @@ function hideMain() {
   if (tg && tg.MainButton) tg.MainButton.hide();
 }
 
+function rowBtn(html, onClick) {
+  const btn = document.createElement("button");
+  btn.className = "row";
+  btn.innerHTML = html;
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
 function renderShelf() {
   const root = document.getElementById("boxes");
   root.innerHTML = "";
   BOXES.forEach((b) => {
-    const btn = document.createElement("button");
-    btn.className = "row";
-    btn.innerHTML = `<span class="icon">${(b.name[0] || "B")}</span><span class="title">${b.name}<span class="sub">${b.count} files</span></span><span class="meta">${b.count}</span><span class="chev">›</span>`;
-    btn.addEventListener("click", () => openBox(b));
-    root.appendChild(btn);
+    root.appendChild(rowBtn(
+      `<span class="icon">${(b.name[0] || "B")}</span><span class="title">${b.name}<span class="sub">${b.count} files</span></span><span class="meta">${b.count}</span><span class="chev">›</span>`,
+      () => openBox(b)
+    ));
   });
   const rec = document.getElementById("recent");
   rec.innerHTML = "";
-  ITEMS.slice(0, 5).forEach((it) => {
-    const btn = document.createElement("button");
-    btn.className = "row";
-    btn.innerHTML = `<span class="icon">F</span><span class="title">${it.label}<span class="sub">${it.kind}</span></span><span class="chev">›</span>`;
-    btn.addEventListener("click", () => send("open", { id: Number(it.id) }));
-    rec.appendChild(btn);
+  const opened = ITEMS.filter((it) => it.opened).slice(0, 5);
+  const recentSaved = ITEMS.slice(0, 5);
+  (opened.length ? opened : recentSaved).forEach((it) => {
+    rec.appendChild(rowBtn(
+      `<span class="icon">F</span><span class="title">${it.label}<span class="sub">${it.kind}</span></span><span class="chev">›</span>`,
+      () => send("open", { id: Number(it.id) })
+    ));
   });
+  const pinRoot = document.getElementById("pinned");
+  const pins = ITEMS.filter((it) => it.pin);
+  document.getElementById("pinned-wrap").hidden = pins.length === 0;
+  if (pinRoot) {
+    pinRoot.innerHTML = "";
+    pins.forEach((it) => {
+      pinRoot.appendChild(rowBtn(
+        `<span class="icon">P</span><span class="title">${it.label}</span><span class="chev">›</span>`,
+        () => send("open", { id: Number(it.id) })
+      ));
+    });
+  }
 }
 
 function filteredItems(box) {
@@ -121,6 +156,7 @@ function filteredItems(box) {
   if (filter === "files") list = list.filter((it) => it.kind !== "text");
   if (filter === "text") list = list.filter((it) => it.kind === "text");
   if (filter === "recent") list = list.slice(0, 8);
+  if (filter === "pinned") list = list.filter((it) => it.pin);
   return list;
 }
 
@@ -151,6 +187,7 @@ function toggleFile(it, btn) {
   if (selected.has(it.id)) selected.delete(it.id);
   else selected.add(it.id);
   btn.classList.toggle("on", selected.has(it.id));
+  haptic("sel");
   if (!tg || !tg.MainButton) return;
   if (!selected.size) {
     tg.MainButton.hide();
@@ -160,6 +197,7 @@ function toggleFile(it, btn) {
   tg.MainButton.show();
   tg.MainButton.onClick(() => {
     const ids = Array.from(selected).map(Number);
+    haptic("ok");
     if (ids.length === 1) send("open", { id: ids[0] });
     else send("open_many", { ids: ids });
   });
@@ -170,11 +208,12 @@ function renderSources() {
   root.innerHTML = "";
   document.getElementById("src-empty").hidden = SOURCES.length > 0;
   SOURCES.forEach((s) => {
-    const row = document.createElement("div");
-    row.className = "row static";
+    const a = document.createElement("a");
+    a.className = "row";
     const handle = s.username ? "@" + s.username.replace(/^@/, "") : "";
-    row.innerHTML = `<span class="icon">S</span><span class="title">${s.title}<span class="sub">${handle}</span></span>`;
-    root.appendChild(row);
+    a.href = s.username ? "https://t.me/" + s.username.replace(/^@/, "") : "#";
+    a.innerHTML = `<span class="icon">S</span><span class="title">${s.title}<span class="sub">${handle}</span></span><span class="chev">›</span>`;
+    root.appendChild(a);
   });
 }
 
@@ -196,9 +235,13 @@ document.getElementById("q").addEventListener("input", renderFiles);
 document.getElementById("btn-pro").addEventListener("click", () => send("vip"));
 document.getElementById("btn-privacy").addEventListener("click", () => send("settings"));
 document.getElementById("btn-erase").addEventListener("click", () => send("settings"));
+document.getElementById("go-sources").addEventListener("click", () => { renderSources(); show("sources"); });
 
 renderShelf();
+const start = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || params.get("startapp") || "";
 window.setTimeout(() => {
   document.getElementById("skel").hidden = true;
   document.getElementById("app").hidden = false;
+  if (start === "sources") { renderSources(); show("sources"); }
+  else show("shelf");
 }, 160);

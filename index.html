@@ -30,6 +30,13 @@
       <div id="boxes" class="list"></div>
       <p class="section-label">Recent</p>
       <div id="recent" class="list"></div>
+      <div id="pinned-wrap" hidden>
+        <p class="section-label">Pinned</p>
+        <div id="pinned" class="list"></div>
+      </div>
+      <div class="list" style="margin-top:16px">
+        <button class="row" id="go-sources"><span class="title">Sources</span><span class="chev">›</span></button>
+      </div>
       <p class="hint">Forward a file</p>
     </section>
     <section id="view-box" hidden>
@@ -38,6 +45,7 @@
         <button data-filter="files">Files</button>
         <button data-filter="text">Text</button>
         <button data-filter="recent">Recent</button>
+        <button data-filter="pinned">Pinned</button>
       </div>
       <input id="q" type="search" placeholder="Search" autocomplete="off">
       <h1 id="box-title">Box</h1>
