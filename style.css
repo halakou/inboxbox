@@ -1,0 +1,9 @@
+:root { color-scheme: dark; --bg:#0b0c0f; --fg:#e8eaed; --muted:#9aa0a6; --line:#2a2d33; --accent:#c4b5a0; }
+* { box-sizing: border-box; }
+body { margin:0 auto; max-width:26rem; padding:1.25rem; font:16px/1.4 ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+.kicker { letter-spacing:.12em; text-transform:uppercase; color:var(--accent); font-size:.7rem; margin:0; }
+h1 { margin:.3rem 0 .4rem; font-size:1.6rem; }
+.lede,.note { color:var(--muted); }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+.row { display:flex; gap:.6rem; }
+button { background:#16181d; color:var(--fg); border:1px solid var(--line); border-radius:.6rem; padding:.8rem; }
