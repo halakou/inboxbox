@@ -5,21 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>InboxBox</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=pro1">
 </head>
 <body>
-  <header>
-    <p class="kicker">InboxBox</p>
-    <h1>Your shelf</h1>
+  <header class="top">
+    <div class="who">
+      <div id="avatar" class="avatar">I</div>
+      <div>
+        <p id="uname" class="name">InboxBox</p>
+        <p id="plan" class="plan">Free</p>
+      </div>
+    </div>
   </header>
-  <div class="search-wrap">
-    <input id="q" type="search" placeholder="Search" autocomplete="off">
-  </div>
-  <section id="home">
-    <p class="section-label">Boxes</p>
-    <div id="rows" class="list"></div>
-    <p class="empty">Forward to the bot</p>
+  <nav class="tabs">
+    <button data-view="shelf" class="on">Shelf</button>
+    <button data-view="sources">Sources</button>
+    <button data-view="settings">Settings</button>
+  </nav>
+  <section id="view-shelf">
+    <h1>Shelf</h1>
+    <div id="boxes" class="list"></div>
+    <p class="hint">Forward a file</p>
   </section>
-  <script src="app.js"></script>
+  <section id="view-box" hidden>
+    <button id="back" class="back">‹ Shelf</button>
+    <h1 id="box-title">Box</h1>
+    <div id="files" class="list"></div>
+    <p id="box-empty" class="hint" hidden>Forward a file</p>
+  </section>
+  <section id="view-sources" hidden>
+    <h1>Sources</h1>
+    <div id="sources" class="list"></div>
+    <p id="src-empty" class="hint">Channels you forward from</p>
+  </section>
+  <section id="view-settings" hidden>
+    <h1>Settings</h1>
+    <div class="list">
+      <div class="row static"><span class="title">Plan</span><span id="set-plan" class="meta">Free</span></div>
+      <div class="row static"><span class="title">Agreed</span><span class="meta">Yes</span></div>
+      <button class="row" id="btn-pro"><span class="title">Pro</span><span class="meta">149 Stars</span><span class="chev">›</span></button>
+      <button class="row" id="btn-privacy"><span class="title">Privacy</span><span class="chev">›</span></button>
+      <button class="row" id="btn-erase"><span class="title">Delete all</span><span class="chev">›</span></button>
+    </div>
+  </section>
+  <script src="app.js?v=pro1"></script>
 </body>
 </html>
