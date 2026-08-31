@@ -119,8 +119,6 @@ function paintPlan() {
   if (b) b.textContent = planLabel;
   const card = document.getElementById("pro-card");
   if (card) card.hidden = PLAN === "Pro";
-  const card = document.getElementById("pro-card");
-  if (card) card.hidden = PLAN === "Pro";
   const q = document.getElementById("quota");
   if (q) {
     if (PLAN === "Pro" || !CAP) q.hidden = true;
@@ -483,4 +481,12 @@ function boot() {
   } catch (e) {}
   try { if (tg && tg.requestWriteAccess) tg.requestWriteAccess(); } catch (e) {}
 }
-loadShelf().finally(boot);
+let booted = false;
+function bootOnce() {
+  if (booted) return;
+  booted = true;
+  boot();
+}
+loadShelf().finally(bootOnce);
+setTimeout(bootOnce, 1200);
+
