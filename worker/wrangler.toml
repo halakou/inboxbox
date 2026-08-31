@@ -1,23 +1,25 @@
 name = "inboxbox"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
+workers_dev = true
+preview_urls = false
 
 [assets]
-directory = "../"
+directory = "../public"
 binding = "ASSETS"
 html_handling = "auto-trailing-slash"
 not_found_handling = "single-page-application"
 
 [vars]
 # Overwritten after first deploy to the Worker origin.
-MINI_APP_URL = "https://halakou.github.io/inboxbox/"
+MINI_APP_URL = "https://inboxbox.halakou.workers.dev"
 
 # Create with: npx wrangler d1 create inboxbox
 # then replace database_id. Do not put tokens here.
 [[d1_databases]]
 binding = "DB"
 database_name = "inboxbox"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "b0be0e74-1250-465b-b344-bd9b38c3e0fb"
 
 # Secrets via wrangler secret put — NEVER commit values:
 #   BOT_TOKEN

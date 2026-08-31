@@ -330,7 +330,7 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
-    if (request.method === "GET" && (path === "/health" || path === "/")) {
+    if (request.method === "GET" && path === "/health") {
       return json({ ok: true, service: "inboxbox" }, 200);
     }
     if (request.method === "GET" && path === "/setup") {
@@ -345,6 +345,7 @@ export default {
     if (request.method === "POST" && path === "/api/op") {
       return handleOpHttp(request, env);
     }
+    if (env.ASSETS) return env.ASSETS.fetch(request);
     return json({ ok: false }, 404);
   },
 };
