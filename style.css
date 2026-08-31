@@ -36,8 +36,8 @@ body {
   min-height: 100vh;
   min-height: var(--tg-viewport-stable-height, 100vh);
   padding: calc(10px + var(--safe-t)) 0 calc(var(--dock-h) + 12px + var(--safe-b));
-  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
-  direction: rtl; text-align: right;
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", system-ui, sans-serif;
+  direction: ltr; text-align: left;
 }
 body.in-box { padding-bottom: calc(16px + var(--safe-b)); }
 .mast {
@@ -70,7 +70,7 @@ h1, .headline {
 }
 .tray {
   border: 0; border-radius: var(--r); padding: 14px 14px 12px;
-  background: var(--cell); color: inherit; text-align: right; font: inherit;
+  background: var(--cell); color: inherit; text-align: left; font: inherit;
   display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
   min-height: 108px;
 }
@@ -87,7 +87,7 @@ h1, .headline {
 .tile {
   flex: 0 0 132px; scroll-snap-align: start;
   border: 0; border-radius: var(--r); padding: 14px 12px 12px;
-  background: var(--cell); color: inherit; text-align: right; font: inherit;
+  background: var(--cell); color: inherit; text-align: left; font: inherit;
   min-height: 128px; display: flex; flex-direction: column; gap: 8px;
 }
 .tile:active { transform: scale(.98); }
@@ -108,7 +108,7 @@ h1, .headline {
   display: flex; align-items: center; gap: 12px;
   width: 100%; padding: 13px 16px;
   border: 0; background: transparent; color: inherit;
-  text-align: right; font: inherit; text-decoration: none;
+  text-align: left; font: inherit; text-decoration: none;
 }
 .row + .row { box-shadow: inset 0 0.5px 0 var(--sep); }
 .row.on { background: color-mix(in srgb, var(--sand) 12%, transparent); }
@@ -151,7 +151,7 @@ h1, .headline {
 input[type="search"] {
   display: block; width: calc(100% - 28px); margin: 0 14px 12px;
   border: 0; border-radius: 12px; background: var(--cell);
-  color: var(--fg); padding: 11px 12px; font: inherit; direction: rtl;
+  color: var(--fg); padding: 11px 12px; font: inherit; direction: ltr;
 }
 .skel { margin: 20px 16px; display: grid; gap: 10px; }
 .skel i {
@@ -181,3 +181,14 @@ body.in-box .dock { display: none; }
 .k-document .tile-glyph, .icon.k-document { background: #243038; color: #a8c4d8; }
 .k-audio .tile-glyph, .icon.k-audio, .k-voice .tile-glyph { background: #283428; color: #c4d8a8; }
 html[data-theme="day"] .k-photo .tile-glyph { background: #f3e6d4; }
+
+.ghost {
+  margin: 10px 14px 0; width: calc(100% - 28px);
+  border: 0.5px dashed color-mix(in srgb, var(--sand) 40%, transparent);
+  background: transparent; color: var(--sand);
+  border-radius: 14px; padding: 12px; font: inherit; font-weight: 650;
+}
+
+.pay.alt { margin-top: 8px; background: transparent; color: var(--fg);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--sand) 50%, transparent); }
+.pro-note { margin: 10px 0 0; color: var(--hint); font-size: 12px; }
