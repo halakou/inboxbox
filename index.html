@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <title>InboxBox</title>
-  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-  <link rel="stylesheet" href="style.css?v=en2">
+  <script>
+    (function () {
+      if (window.Telegram && window.Telegram.WebApp) return;
+      var s = document.createElement("script");
+      s.src = "https://telegram.org/js/telegram-web-app.js?63";
+      document.head.appendChild(s);
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=en3">
 </head>
 <body>
   <div id="skel" class="skel" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -102,6 +109,6 @@
       </button>
     </nav>
   </div>
-  <script src="app.js?v=en2"></script>
+  <script src="app.js?v=en3"></script>
 </body>
 </html>
