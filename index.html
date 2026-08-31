@@ -1,73 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
   <title>InboxBox</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=super1">
+  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+  <link rel="stylesheet" href="style.css?v=pro1">
 </head>
 <body>
-  <div id="skel" class="skel"></div>
+  <div id="skel" class="skel" aria-hidden="true"></div>
   <div id="app" hidden>
     <header class="top">
       <div class="who">
-        <div id="avatar" class="avatar">I</div>
         <div>
           <p id="uname" class="name">InboxBox</p>
-          <p id="plan" class="plan">Free</p>
+          <p id="plan" class="plan">رایگان</p>
         </div>
+        <div id="avatar" class="avatar">ق</div>
       </div>
     </header>
-    <nav class="tabs">
-      <button data-view="shelf" class="on">Shelf</button>
-      <button data-view="sources">Sources</button>
-      <button data-view="settings">Settings</button>
+    <nav class="tabs" role="tablist">
+      <button data-view="shelf" class="on" type="button">قفسه</button>
+      <button data-view="sources" type="button">منابع</button>
+      <button data-view="settings" type="button">تنظیمات</button>
     </nav>
+
     <section id="view-shelf">
-      <h1>Shelf</h1>
-      <p class="section-label">Boxes</p>
+      <h1>قفسه</h1>
+      <div id="empty-hero" class="hero" hidden>
+        <p class="hero-kicker">به‌جای Saved Messages</p>
+        <p class="hero-title">یک چت بی‌انتها نیست. قفسه‌ات است.</p>
+        <p class="hero-copy">همان یک فوروارد. فایل روی تلگرام می‌ماند. اینجا فقط می‌دانی کجاست.</p>
+      </div>
+      <p class="section-label">باکس‌ها</p>
       <div id="boxes" class="list"></div>
-      <p class="section-label">Recent</p>
+      <p class="section-label">تازه</p>
       <div id="recent" class="list"></div>
+      <p id="recent-empty" class="hint" hidden>هنوز چیزی باز نشده. یک فایل فوروارد کن.</p>
       <div id="pinned-wrap" hidden>
-        <p class="section-label">Pinned</p>
+        <p class="section-label">پین</p>
         <div id="pinned" class="list"></div>
       </div>
-      <div class="list" style="margin-top:16px">
-        <button class="row" id="go-sources"><span class="title">Sources</span><span class="chev">›</span></button>
-      </div>
-      <p class="hint">Forward a file</p>
     </section>
+
     <section id="view-box" hidden>
       <div class="filters">
-        <button data-filter="all" class="on">All</button>
-        <button data-filter="files">Files</button>
-        <button data-filter="text">Text</button>
-        <button data-filter="recent">Recent</button>
-        <button data-filter="pinned">Pinned</button>
+        <button data-filter="all" class="on" type="button">همه</button>
+        <button data-filter="files" type="button">فایل</button>
+        <button data-filter="text" type="button">متن</button>
+        <button data-filter="recent" type="button">تازه</button>
+        <button data-filter="pinned" type="button">پین</button>
       </div>
-      <input id="q" type="search" placeholder="Search" autocomplete="off">
-      <h1 id="box-title">Box</h1>
+      <input id="q" type="search" placeholder="جستجو در این باکس" autocomplete="off" enterkeyhint="search">
+      <h1 id="box-title">باکس</h1>
       <div id="files" class="list"></div>
-      <p id="box-empty" class="hint" hidden>Forward a file</p>
+      <p id="box-empty" class="hint" hidden>این باکس خالی است. یک فایل به ربات فوروارد کن.</p>
     </section>
+
     <section id="view-sources" hidden>
-      <h1>Sources</h1>
+      <h1>منابع</h1>
+      <p class="lede">کانال‌ها و چت‌هایی که ازشان فوروارد کردی. Saved Messages این را یادش می‌ماند؟ نه.</p>
       <div id="sources" class="list"></div>
-      <p id="src-empty" class="hint">Channels you forward from</p>
+      <p id="src-empty" class="hint">از یک کانال فوروارد کن تا اینجا بنشیند.</p>
     </section>
+
     <section id="view-settings" hidden>
-      <h1>Settings</h1>
+      <h1>تنظیمات</h1>
       <div class="list">
-        <div class="row static"><span class="title">Plan</span><span id="set-plan" class="meta">Free</span></div>
-        <div class="row static"><span class="title">Agreed</span><span class="meta">Yes</span></div>
-        <button class="row" id="btn-pro"><span class="title">Pro</span><span class="meta">149 Stars</span><span class="chev">›</span></button>
-        <button class="row" id="btn-privacy"><span class="title">Privacy</span><span class="chev">›</span></button>
-        <button class="row" id="btn-erase"><span class="title">Delete all</span><span class="chev">›</span></button>
+        <div class="row static"><span class="title">پلن<span class="sub" id="set-plan">رایگان</span></span></div>
+        <button class="row" id="btn-pro" type="button"><span class="title">InboxBox Pro<span class="sub">قفسه نامحدود، پین بیشتر</span></span><span class="meta">۱۴۹ ستاره</span></button>
+        <button class="row" id="btn-privacy" type="button"><span class="title">حریم خصوصی<span class="sub">فایل روی سرور تلگرام می‌ماند</span></span><span class="chev">‹</span></button>
+        <button class="row danger" id="btn-erase" type="button"><span class="title">پاک کردن همه<span class="sub">فقط فهرست قفسه، نه فایل‌های تلگرام</span></span></button>
       </div>
     </section>
   </div>
-  <script src="app.js?v=super1"></script>
+  <script src="app.js?v=pro1"></script>
 </body>
 </html>

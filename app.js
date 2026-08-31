@@ -24,10 +24,11 @@ if (tg) {
 
 function haptic(kind) {
   try {
-    if (tg && tg.HapticFeedback) {
-      if (kind === "ok") tg.HapticFeedback.notificationOccurred("success");
-      else if (kind === "sel") tg.HapticFeedback.selectionChanged();
-    }
+    if (!tg || !tg.HapticFeedback) return;
+    if (kind === "ok") tg.HapticFeedback.notificationOccurred("success");
+    else if (kind === "warn") tg.HapticFeedback.notificationOccurred("warning");
+    else if (kind === "sel") tg.HapticFeedback.selectionChanged();
+    else tg.HapticFeedback.impactOccurred("light");
   } catch (e) {}
 }
 
@@ -41,11 +42,17 @@ function decodeParts(raw, n) {
   });
 }
 
+const KIND_FA = {
+  photo: "عکس", video: "ویدیو", document: "فایل", audio: "آهنگ",
+  voice: "ویس", text: "متن", link: "لینک", animation: "گیف", sticker: "استیکر"
+};
+function kindLabel(k) { return KIND_FA[k] || k || "فایل"; }
+
 const params = qs();
 const PLAN = params.get("plan") === "pro" ? "Pro" : "Free";
 const BOXES = decodeParts(params.get("boxes"), 3).map((b) => ({
   id: b[0],
-  name: decodeURIComponent(b[1] || "Box"),
+  name: decodeURIComponent(b[1] || "باکس"),
   count: Number(b[2] || 0),
 }));
 const ITEMS = decodeParts(params.get("items"), 7).map((it) => ({
@@ -53,33 +60,53 @@ const ITEMS = decodeParts(params.get("items"), 7).map((it) => ({
   box: it[1],
   kind: it[2],
   bytes: Number(it[3] || 0),
-  label: decodeURIComponent(it[4] || it[2] || "file"),
+  label: decodeURIComponent(it[4] || it[2] || "فایل"),
   pin: it[5] === "1",
   opened: it[6] === "1",
 }));
 const SOURCES = decodeParts(params.get("sources"), 3).map((s) => ({
   id: s[0],
   username: decodeURIComponent(s[1] || ""),
-  title: decodeURIComponent(s[2] || s[1] || "channel"),
+  title: decodeURIComponent(s[2] || s[1] || "منبع"),
 }));
+
+const DEFAULT_BOXES = [
+  { id: "inbox", name: "ورود" },
+  { id: "work", name: "کار" },
+  { id: "ideas", name: "ایده‌ها" },
+  { id: "links", name: "لینک‌ها" },
+];
 if (!BOXES.length) {
-  ["Work", "Ideas", "Links"].forEach((name, i) => BOXES.push({ id: String(i + 1), name: name, count: 0 }));
+  DEFAULT_BOXES.forEach((b, i) => BOXES.push({ id: b.id || String(i + 1), name: b.name, count: 0 }));
 }
 
 const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
 const uname = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "InboxBox";
 document.getElementById("uname").textContent = uname;
-document.getElementById("plan").textContent = PLAN;
-document.getElementById("set-plan").textContent = PLAN;
+const planFa = PLAN === "Pro" ? "پرو" : "رایگان";
+document.getElementById("plan").textContent = planFa;
+document.getElementById("set-plan").textContent = planFa;
 const av = document.getElementById("avatar");
 if (user.photo_url) av.innerHTML = `<img alt="" src="${user.photo_url}">`;
-else av.textContent = (uname[0] || "I").toUpperCase();
+else av.textContent = (uname[0] || "ق").toUpperCase();
 
 function payload(op, extra) {
   return JSON.stringify(Object.assign({ op: op, initData: (tg && tg.initData) || "" }, extra || {}));
 }
 function send(op, extra) {
-  if (tg && tg.sendData) tg.sendData(payload(op, extra));
+  const body = payload(op, extra);
+  const onPages = /github\.io$/i.test(location.hostname);
+  const api = (window.INBOXBOX_API || (onPages ? "" : "")).replace(/\/$/, "");
+  const useFetch = !onPages && !!(tg && tg.initData);
+  if (useFetch) {
+    fetch((api || "") + "/api/op", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": tg.initData },
+      body: body,
+    }).catch(() => {});
+    return;
+  }
+  if (tg && tg.sendData) tg.sendData(body);
 }
 
 let currentBox = null;
@@ -110,29 +137,40 @@ function hideMain() {
 
 function rowBtn(html, onClick) {
   const btn = document.createElement("button");
+  btn.type = "button";
   btn.className = "row";
   btn.innerHTML = html;
   btn.addEventListener("click", onClick);
   return btn;
 }
 
+function totalItems() {
+  return ITEMS.length || BOXES.reduce((n, b) => n + (b.count || 0), 0);
+}
+
 function renderShelf() {
+  const empty = document.getElementById("empty-hero");
+  if (empty) empty.hidden = totalItems() > 0;
   const root = document.getElementById("boxes");
   root.innerHTML = "";
   BOXES.forEach((b) => {
+    const n = b.count || ITEMS.filter((it) => it.box === b.id).length;
     root.appendChild(rowBtn(
-      `<span class="icon">${(b.name[0] || "B")}</span><span class="title">${b.name}<span class="sub">${b.count} files</span></span><span class="meta">${b.count}</span><span class="chev">›</span>`,
+      `<span class="icon">${(b.name[0] || "ب")}</span><span class="title">${b.name}<span class="sub">${n} مورد</span></span><span class="meta">${n}</span><span class="chev">‹</span>`,
       () => openBox(b)
     ));
   });
   const rec = document.getElementById("recent");
   rec.innerHTML = "";
-  const opened = ITEMS.filter((it) => it.opened).slice(0, 5);
-  const recentSaved = ITEMS.slice(0, 5);
-  (opened.length ? opened : recentSaved).forEach((it) => {
+  const opened = ITEMS.filter((it) => it.opened).slice(0, 8);
+  const recentSaved = ITEMS.slice(0, 8);
+  const recent = opened.length ? opened : recentSaved;
+  const recEmpty = document.getElementById("recent-empty");
+  if (recEmpty) recEmpty.hidden = recent.length > 0;
+  recent.forEach((it) => {
     rec.appendChild(rowBtn(
-      `<span class="icon">F</span><span class="title">${it.label}<span class="sub">${it.kind}</span></span><span class="chev">›</span>`,
-      () => send("open", { id: Number(it.id) })
+      `<span class="icon">ف</span><span class="title">${it.label}<span class="sub">${kindLabel(it.kind)}</span></span><span class="chev">‹</span>`,
+      () => { haptic("ok"); send("open", { id: Number(it.id) }); }
     ));
   });
   const pinRoot = document.getElementById("pinned");
@@ -142,8 +180,8 @@ function renderShelf() {
     pinRoot.innerHTML = "";
     pins.forEach((it) => {
       pinRoot.appendChild(rowBtn(
-        `<span class="icon">P</span><span class="title">${it.label}</span><span class="chev">›</span>`,
-        () => send("open", { id: Number(it.id) })
+        `<span class="icon">پ</span><span class="title">${it.label}</span><span class="chev">‹</span>`,
+        () => { haptic("ok"); send("open", { id: Number(it.id) }); }
       ));
     });
   }
@@ -152,7 +190,7 @@ function renderShelf() {
 function filteredItems(box) {
   let list = ITEMS.filter((it) => it.box === box.id);
   const q = (document.getElementById("q").value || "").trim().toLowerCase();
-  if (q) list = list.filter((it) => (it.label || "").toLowerCase().includes(q) || (it.kind || "").includes(q));
+  if (q) list = list.filter((it) => (it.label || "").toLowerCase().includes(q) || (it.kind || "").includes(q) || (kindLabel(it.kind) || "").includes(q));
   if (filter === "files") list = list.filter((it) => it.kind !== "text");
   if (filter === "text") list = list.filter((it) => it.kind === "text");
   if (filter === "recent") list = list.slice(0, 8);
@@ -165,6 +203,8 @@ function openBox(box) {
   filter = "all";
   document.querySelectorAll(".filters button").forEach((b) => b.classList.toggle("on", b.getAttribute("data-filter") === "all"));
   document.getElementById("box-title").textContent = box.name;
+  const q = document.getElementById("q");
+  if (q) q.value = "";
   renderFiles();
   show("box");
 }
@@ -176,8 +216,9 @@ function renderFiles() {
   document.getElementById("box-empty").hidden = files.length > 0;
   files.forEach((it) => {
     const btn = document.createElement("button");
+    btn.type = "button";
     btn.className = "row" + (selected.has(it.id) ? " on" : "");
-    btn.innerHTML = `<span class="icon">F</span><span class="title">${it.label}<span class="sub">${it.kind}</span></span><span class="chev">›</span>`;
+    btn.innerHTML = `<span class="icon">ف</span><span class="title">${it.label}<span class="sub">${kindLabel(it.kind)}</span></span><span class="chev">‹</span>`;
     btn.addEventListener("click", () => toggleFile(it, btn));
     root.appendChild(btn);
   });
@@ -193,7 +234,7 @@ function toggleFile(it, btn) {
     tg.MainButton.hide();
     return;
   }
-  tg.MainButton.setText(selected.size === 1 ? "Open" : "Open " + selected.size);
+  tg.MainButton.setText(selected.size === 1 ? "باز کردن" : "باز کردن " + selected.size);
   tg.MainButton.show();
   tg.MainButton.onClick(() => {
     const ids = Array.from(selected).map(Number);
@@ -212,7 +253,7 @@ function renderSources() {
     a.className = "row";
     const handle = s.username ? "@" + s.username.replace(/^@/, "") : "";
     a.href = s.username ? "https://t.me/" + s.username.replace(/^@/, "") : "#";
-    a.innerHTML = `<span class="icon">S</span><span class="title">${s.title}<span class="sub">${handle}</span></span><span class="chev">›</span>`;
+    a.innerHTML = `<span class="icon">م</span><span class="title">${s.title}<span class="sub">${handle}</span></span><span class="chev">‹</span>`;
     root.appendChild(a);
   });
 }
@@ -220,6 +261,7 @@ function renderSources() {
 document.querySelectorAll(".tabs button").forEach((b) => {
   b.addEventListener("click", () => {
     const v = b.getAttribute("data-view");
+    haptic("sel");
     if (v === "sources") renderSources();
     show(v);
   });
@@ -232,10 +274,20 @@ document.querySelectorAll(".filters button").forEach((b) => {
   });
 });
 document.getElementById("q").addEventListener("input", renderFiles);
-document.getElementById("btn-pro").addEventListener("click", () => send("vip"));
-document.getElementById("btn-privacy").addEventListener("click", () => send("settings"));
-document.getElementById("btn-erase").addEventListener("click", () => send("settings"));
-document.getElementById("go-sources").addEventListener("click", () => { renderSources(); show("sources"); });
+document.getElementById("btn-pro").addEventListener("click", () => { haptic("ok"); send("vip"); });
+document.getElementById("btn-privacy").addEventListener("click", () => {
+  haptic("sel");
+  const msg = "فایل‌هایت روی سرور تلگرام می‌مانند. InboxBox فقط شناسه فایل و برچسب را نگه می‌دارد، نه خود فایل.";
+  if (tg && tg.showAlert) tg.showAlert(msg);
+  else window.alert(msg);
+});
+document.getElementById("btn-erase").addEventListener("click", () => {
+  haptic("warn");
+  const ask = "همه فهرست قفسه پاک شود؟ خود فایل‌ها روی تلگرام می‌مانند.";
+  const go = () => { send("erase"); };
+  if (tg && tg.showConfirm) tg.showConfirm(ask, (ok) => { if (ok) go(); });
+  else if (window.confirm(ask)) go();
+});
 
 renderShelf();
 const start = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || params.get("startapp") || "";
@@ -244,4 +296,11 @@ window.setTimeout(() => {
   document.getElementById("app").hidden = false;
   if (start === "sources") { renderSources(); show("sources"); }
   else show("shelf");
+  try {
+    if (tg && tg.checkHomeScreenStatus && totalItems() > 0) {
+      tg.checkHomeScreenStatus((status) => {
+        if (status === "missed" && tg.addToHomeScreen) tg.addToHomeScreen();
+      });
+    }
+  } catch (e) {}
 }, 160);
