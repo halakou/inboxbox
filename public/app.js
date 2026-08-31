@@ -44,12 +44,26 @@ function decodeParts(raw, n) {
 
 const KIND_FA = {
   photo: "عکس", video: "ویدیو", document: "فایل", audio: "آهنگ",
-  voice: "ویس", text: "متن", link: "لینک", animation: "گیف", sticker: "استیکر"
+  voice: "ویس", text: "متن", link: "لینک", animation: "گیف", sticker: "استیکر",
+  video_note: "ویدیو"
+};
+const KIND_ICON = {
+  photo: "▣", video: "▶", document: "▤", audio: "♪",
+  voice: "◉", text: "آ", link: "⌘", animation: "✧", sticker: "☺",
+  video_note: "●"
 };
 function kindLabel(k) { return KIND_FA[k] || k || "فایل"; }
+function kindIcon(k) { return KIND_ICON[k] || "▤"; }
+
+function apiBase() {
+  if (window.INBOXBOX_API) return String(window.INBOXBOX_API).replace(/\/$/, "");
+  const host = location.hostname || "";
+  if (host === "inboxbox.halakou.workers.dev" || /\.workers\.dev$/i.test(host)) return "";
+  return "https://inboxbox.halakou.workers.dev";
+}
 
 const params = qs();
-const PLAN = params.get("plan") === "pro" ? "Pro" : "Free";
+let PLAN = params.get("plan") === "pro" ? "Pro" : "Free";
 const BOXES = decodeParts(params.get("boxes"), 3).map((b) => ({
   id: b[0],
   name: decodeURIComponent(b[1] || "باکس"),
@@ -77,15 +91,20 @@ const DEFAULT_BOXES = [
   { id: "links", name: "لینک‌ها" },
 ];
 if (!BOXES.length) {
-  DEFAULT_BOXES.forEach((b, i) => BOXES.push({ id: b.id || String(i + 1), name: b.name, count: 0 }));
+  DEFAULT_BOXES.forEach((b) => BOXES.push({ id: b.id, name: b.name, count: 0 }));
 }
 
 const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
 const uname = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "InboxBox";
 document.getElementById("uname").textContent = uname;
-const planFa = PLAN === "Pro" ? "پرو" : "رایگان";
-document.getElementById("plan").textContent = planFa;
-document.getElementById("set-plan").textContent = planFa;
+function paintPlan() {
+  const planFa = PLAN === "Pro" ? "پرو" : "رایگان";
+  const a = document.getElementById("plan");
+  const b = document.getElementById("set-plan");
+  if (a) a.textContent = planFa;
+  if (b) b.textContent = planFa;
+}
+paintPlan();
 const av = document.getElementById("avatar");
 if (user.photo_url) av.innerHTML = `<img alt="" src="${user.photo_url}">`;
 else av.textContent = (uname[0] || "ق").toUpperCase();
@@ -95,18 +114,62 @@ function payload(op, extra) {
 }
 function send(op, extra) {
   const body = payload(op, extra);
-  const onPages = /github\.io$/i.test(location.hostname);
-  const api = (window.INBOXBOX_API || (onPages ? "" : "")).replace(/\/$/, "");
-  const useFetch = !onPages && !!(tg && tg.initData);
-  if (useFetch) {
-    fetch((api || "") + "/api/op", {
+  const initData = (tg && tg.initData) || "";
+  if (initData) {
+    fetch(apiBase() + "/api/op", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": tg.initData },
+      headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData },
       body: body,
+    }).then(() => {
+      if (op === "erase" || op === "pin") {
+        return loadShelf().then(() => { renderShelf(); renderSources(); });
+      }
     }).catch(() => {});
     return;
   }
   if (tg && tg.sendData) tg.sendData(body);
+}
+
+async function loadShelf() {
+  const initData = (tg && tg.initData) || "";
+  if (!initData) return false;
+  try {
+    const res = await fetch(apiBase() + "/api/shelf", {
+      headers: { "X-Telegram-Init-Data": initData },
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data || !data.ok) return false;
+    PLAN = data.plan === "pro" ? "Pro" : "Free";
+    paintPlan();
+    if (Array.isArray(data.boxes) && data.boxes.length) {
+      BOXES.length = 0;
+      data.boxes.forEach((b) => BOXES.push({
+        id: String(b.id),
+        name: b.name,
+        count: Number(b.count || 0),
+      }));
+    }
+    ITEMS.length = 0;
+    (data.items || []).forEach((it) => ITEMS.push({
+      id: String(it.id),
+      box: String(it.box),
+      kind: it.kind,
+      bytes: Number(it.bytes || 0),
+      label: it.label || it.kind,
+      pin: !!it.pin,
+      opened: !!it.opened,
+    }));
+    SOURCES.length = 0;
+    (data.sources || []).forEach((s) => SOURCES.push({
+      id: String(s.id),
+      username: s.username || "",
+      title: s.title || "",
+    }));
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 let currentBox = null;
@@ -148,6 +211,11 @@ function totalItems() {
   return ITEMS.length || BOXES.reduce((n, b) => n + (b.count || 0), 0);
 }
 
+function itemRowHtml(it) {
+  const label = String(it.label || kindLabel(it.kind)).replace(/[<>&]/g, "");
+  return `<span class="icon k-${it.kind || "file"}">${kindIcon(it.kind)}</span><span class="title">${label}<span class="sub">${kindLabel(it.kind)}</span></span><span class="chev">‹</span>`;
+}
+
 function renderShelf() {
   const empty = document.getElementById("empty-hero");
   if (empty) empty.hidden = totalItems() > 0;
@@ -168,10 +236,7 @@ function renderShelf() {
   const recEmpty = document.getElementById("recent-empty");
   if (recEmpty) recEmpty.hidden = recent.length > 0;
   recent.forEach((it) => {
-    rec.appendChild(rowBtn(
-      `<span class="icon">ف</span><span class="title">${it.label}<span class="sub">${kindLabel(it.kind)}</span></span><span class="chev">‹</span>`,
-      () => { haptic("ok"); send("open", { id: Number(it.id) }); }
-    ));
+    rec.appendChild(rowBtn(itemRowHtml(it), () => { haptic("ok"); send("open", { id: Number(it.id) }); }));
   });
   const pinRoot = document.getElementById("pinned");
   const pins = ITEMS.filter((it) => it.pin);
@@ -179,10 +244,7 @@ function renderShelf() {
   if (pinRoot) {
     pinRoot.innerHTML = "";
     pins.forEach((it) => {
-      pinRoot.appendChild(rowBtn(
-        `<span class="icon">پ</span><span class="title">${it.label}</span><span class="chev">‹</span>`,
-        () => { haptic("ok"); send("open", { id: Number(it.id) }); }
-      ));
+      pinRoot.appendChild(rowBtn(itemRowHtml(it), () => { haptic("ok"); send("open", { id: Number(it.id) }); }));
     });
   }
 }
@@ -218,7 +280,7 @@ function renderFiles() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "row" + (selected.has(it.id) ? " on" : "");
-    btn.innerHTML = `<span class="icon">ف</span><span class="title">${it.label}<span class="sub">${kindLabel(it.kind)}</span></span><span class="chev">‹</span>`;
+    btn.innerHTML = itemRowHtml(it);
     btn.addEventListener("click", () => toggleFile(it, btn));
     root.appendChild(btn);
   });
@@ -284,14 +346,14 @@ document.getElementById("btn-privacy").addEventListener("click", () => {
 document.getElementById("btn-erase").addEventListener("click", () => {
   haptic("warn");
   const ask = "همه فهرست قفسه پاک شود؟ خود فایل‌ها روی تلگرام می‌مانند.";
-  const go = () => { send("erase"); };
+  const go = () => { send("erase"); ITEMS.length = 0; SOURCES.length = 0; BOXES.forEach((b) => { b.count = 0; }); renderShelf(); renderSources(); };
   if (tg && tg.showConfirm) tg.showConfirm(ask, (ok) => { if (ok) go(); });
   else if (window.confirm(ask)) go();
 });
 
-renderShelf();
 const start = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || params.get("startapp") || "";
-window.setTimeout(() => {
+loadShelf().finally(() => {
+  renderShelf();
   document.getElementById("skel").hidden = true;
   document.getElementById("app").hidden = false;
   if (start === "sources") { renderSources(); show("sources"); }
@@ -303,4 +365,4 @@ window.setTimeout(() => {
       });
     }
   } catch (e) {}
-}, 160);
+});
