@@ -86,11 +86,13 @@ function corsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
   const ok =
     origin === "https://halakou.github.io" ||
+    origin === "https://inboxbox.halakou.workers.dev" ||
+    origin.endsWith(".workers.dev") ||
     origin.endsWith(".pages.dev") ||
     origin === "https://web.telegram.org" ||
     origin.endsWith(".telegram.org");
   return {
-    "access-control-allow-origin": ok ? origin : "https://halakou.github.io",
+    "access-control-allow-origin": ok ? origin : "https://inboxbox.halakou.workers.dev",
     "access-control-allow-headers": "content-type, authorization, x-telegram-init-data",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
