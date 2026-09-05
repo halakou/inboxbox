@@ -1,5 +1,10 @@
 *.env
 .env
+.env.*
+!.env.example
+.dev.vars
 .wrangler/
 node_modules/
-dev.vars
+*.log
+.DS_Store
+Thumbs.db

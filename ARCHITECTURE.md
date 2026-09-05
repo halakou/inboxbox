@@ -1,25 +1,21 @@
 # InboxBox architecture
 
-Product and workstation are separate.
+## Product
 
-## Product (customers)
-- Source: GitHub `halakou/inboxbox` (may go private after Mini App is served from Cloudflare).
-- Runtime: Cloudflare Workers + D1 + static Mini App. Free tier first.
-- Not on HalakouAi. Power cut must not kill the bot.
-- Hot path: webhook → store Telegram `file_id` → 200. No LLM.
-- Commands: `/start`, `/shelf` only.
-- Mini App URL must stay public HTTPS.
+- Source: GitHub `halakou/inboxbox`
+- Runtime: Cloudflare Workers + D1 + same-origin Mini App
+- Hot path: webhook → store Telegram `file_id` → HTTP 200. No LLM on save/open.
+- Commands: `/start`, `/shelf`
+- Mini App URL stays public HTTPS (Telegram WebView)
 
-## Workstation (Halakou, local, free)
-- Lives on HalakouAi even if Teo/Grok Bot subscription ends.
-- Local Qwen via Ollama, OpenCode on 127.0.0.1.
-- Reads this repo and SECURITY.md. Does not call paid cloud coding APIs.
-- Must not flash windows. Hidden tasks only. No PowerShell popups.
-- Does not long-poll the product bot.
+## Data
 
-## If Teo is gone
-1. OpenCode + Ollama already on the PC.
-2. Follow SECURITY.md then this file.
-3. Chunk work. Test. Commit to GitHub account `halakou`.
-4. Deploy Worker with Wrangler when Cloudflare is connected.
-5. Never put tokens in git.
+Each row belongs to `telegram_user_id`. Other users cannot read it.
+
+## Secrets
+
+`BOT_TOKEN`, `WEBHOOK_SECRET`, and `SETUP_KEY` are Cloudflare Worker secrets. They are never committed.
+
+## Out of scope
+
+This repository is the customer product. Workstation automation and local models are not part of the product runtime.

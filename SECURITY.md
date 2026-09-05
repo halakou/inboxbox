@@ -1,35 +1,28 @@
-# InboxBox و HalakouAi — پروتکل امنیتی
+# Security Policy
 
-این فایل قانون است، نه پیشنهاد. مسیر حرفه‌ای بدون این موارد قبول نیست.
+## Supported versions
 
-## چرا
-InboxBox محصول مشتری است. سیستم HalakouAi مال صاحب محصول است.
-این دو را قاطی نکن. حمله به محصول نباید سیستم خانگی را ببرد. قطع برق سیستم خانگی نباید محصول را بکشد.
+The `main` branch and the live Worker at `https://inboxbox.halakou.workers.dev`.
 
-## خط قرمزها
-1. توکن ربات، فایل `.env`، رمز ویندوز، و هر کلید را در گیت، چت، لاگ یا اسکرین‌شات نگذار.
-2. فایل مشتری را دانلود یا ذخیره نکن. فقط `file_id` تلگرام.
-3. هوش مصنوعی روی مسیر ذخیره و باز کردن مشتری اجرا نشود. بعداً فقط سلامت و امنیت زیرساخت.
-4. ربات محصول (`@inboxbox_save_bot`) فرمان سیستمی ندارد: نه build، نه status، نه تست، نه کنترل کامپیوتر.
-5. Ollama و OpenCode فقط روی `127.0.0.1`. به اینترنت باز نشوند.
-6. VPN / Tailscale / فایروال / آنتی‌ویروس را بدون دستور صریح صاحب سیستم دست نزن.
-7. رمز ویندوز را نپرس و ذخیره نکن.
-8. هویت مینی‌اپ را با HMAC روی `initData` چک کن. وب‌هوک را با `secret_token` چک کن.
-9. پاک‌کردن همه داده‌های یک کاربر فقط با تأیید خود کاربر.
-10. اگر ایمنی جلوی کاری را گرفت، دور نزن (کوکی، توکن دزدی، فرمان رمزشده). یا راه امن‌تر، یا تأیید صریح صاحب سیستم.
+## Reporting a vulnerability
 
-## محصول InboxBox
-- اجرا: Cloudflare Workers + D1 (همیشه روشن، نه کامپیوتر خانگی).
-- منبع: GitHub `halakou/inboxbox`. رازها در Secrets کلادفلر.
-- مینی‌اپ باید HTTPS عمومی بماند (وب‌ویوی تلگرام). سورس می‌تواند بعداً خصوصی شود.
-- هر ردیف داده متعلق به `telegram_user_id` همان کاربر است. کاربر دیگری نمی‌بیند.
-- دستورهای مشتری فقط `/start` و `/shelf`.
+Use GitHub **private vulnerability reporting** on this repository. Do not open a public issue for secrets or exploitable bugs. Do not paste tokens, `.env` files, or customer `file_id` values.
 
-## اتوماسیون محلی
-- کار کدنویسی محلی است (Qwen / OpenCode)، نه کلاد اجباری.
-- اتوماسیون حق ندارد پول خرج کند، پیام به جای صاحب بفرستد، یا سیستم را ریبوت کند مگر با تأیید.
-- لاگ کوتاه از تغییر فایل و سرویس نگه دار؛ راز داخل لاگ نرود.
-- ربات کنترل سیستم جداست (یوزرنیم جدا؛ توکن جدا). تا آن ربات نیاید، کنترل از روی InboxBox ساخته نشود.
+## Product rules
 
-## اگر شک داری
-کار را متوقف کن. مسیر امن‌تر را انتخاب کن. از صاحب سیستم تأیید بگیر.
+1. Never commit `BOT_TOKEN`, `WEBHOOK_SECRET`, `SETUP_KEY`, `.env`, or `.dev.vars`.
+2. Store Telegram `file_id` only. Do not download or persist customer file bytes.
+3. No LLM on the save/open path.
+4. Product bot commands are `/start` and `/shelf` only. No admin, build, or host-control commands on the product bot.
+5. Verify Mini App identity with HMAC on `initData`. Verify the webhook with `X-Telegram-Bot-Api-Secret-Token`.
+6. Each D1 row belongs to that user's `telegram_user_id`. Other users must not read it.
+7. Mini App URL stays public HTTPS (Telegram WebView). Secrets stay in Cloudflare.
+
+## Secrets
+
+```bash
+cd worker
+npx wrangler secret put BOT_TOKEN
+npx wrangler secret put WEBHOOK_SECRET
+npx wrangler secret put SETUP_KEY
+```
